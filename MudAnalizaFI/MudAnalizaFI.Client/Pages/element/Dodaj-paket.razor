@@ -1,0 +1,62 @@
+﻿@page "/dodaj-paket"
+@using Shared
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-10">
+    <MudPaper Elevation="4" Class="p-6 rounded-xl">
+        <MudText Typo="Typo.h4" Align="Align.Center" GutterBottom="true">Dodaj paket</MudText>
+
+        <MudGrid Class="mt-4" Spacing="3" Justify="Justify.Center">
+            <MudItem xs="12" sm="6">
+                <MudTextField T="string" Label="Šifra paketa" @bind-Value="noviPaket.SifraPaketa" Variant="Variant.Outlined" FullWidth="true" />
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudTextField T="double" Label="Dužina (a)" @bind-Value="noviPaket.Duzina" Variant="Variant.Outlined" FullWidth="true" />
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudTextField T="double" Label="Visina (b)" @bind-Value="noviPaket.Visina" Variant="Variant.Outlined" FullWidth="true" />
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudTextField T="double" Label="Širina (c)" @bind-Value="noviPaket.Sirina" Variant="Variant.Outlined" FullWidth="true" />
+            </MudItem>
+        </MudGrid>
+
+        <MudDivider Class="my-4" />
+
+        <MudGrid Justify="Justify.Center">
+            <MudItem>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Style="padding: 12px 30px;" OnClick="DodajPaket">
+                    Sačuvaj paket
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private Paket noviPaket = new();
+
+
+    private async Task DodajPaket()
+    {
+        try
+        {
+            var response = await Http.PostAsJsonAsync("/api/Pakets", noviPaket);
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Paket uspešno dodat!", Severity.Success);
+                noviPaket = new(); // Resetuj formu
+            }
+            else
+            {
+                Snackbar.Add($"Greška pri dodavanju: {response.StatusCode}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Greška: {ex.Message}", Severity.Error);
+        }
+    }
+
+}

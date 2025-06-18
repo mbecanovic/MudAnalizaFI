@@ -1,0 +1,108 @@
+﻿@page "/elementbaza"
+@inject NavigationManager Navigation
+
+<MudContainer class="mt-3">
+	<MudText Typo="Typo.h3" Align="Align.Center" GutterBottom="true">Baza elemenata</MudText>
+	<MudText Typo="Typo.body1" Align="Align.Center" GutterBottom="true">Unesi novi paket ili dodaj element</MudText>
+
+	<MudGrid Class="mt-5" Justify="Justify.Center" AlignItems="AlignItems.Center">
+		<MudItem class="mx-2">
+			<MudButton Variant="Variant.Filled" Color="Color.Primary" Style="padding: 12px 24px;"
+					   OnClick="@(() => Navigation.NavigateTo("/dodaj-paket"))">
+				Dodaj paket
+			</MudButton>
+		</MudItem>
+		<MudItem class="mx-2">
+		<MudButton Variant="Variant.Filled" Color="Color.Primary" Style="padding: 12px 24px;"
+				   OnClick="@(() => Navigation.NavigateTo("/dodaj-gustine"))">
+			Gustina
+		</MudButton>
+		</MudItem>
+		<MudItem class="mx-2">
+			<MudButton Variant="Variant.Filled" Color="Color.Primary" Style="padding: 12px 24px;">
+				Dodaj element
+			</MudButton>
+		</MudItem>
+		<MudItem class="mx-2">
+			<MudButton Variant="Variant.Filled" Color="Color.Primary" Style="padding: 12px 24px;">
+				Lista artikala
+			</MudButton>
+		</MudItem>
+	</MudGrid>
+</MudContainer>
+
+<MudContainer class="mt-5">
+	<h1 class="mt-5">Baza elemenata</h1>
+	<MudTable Items="elementbaza" Hover="true" SortLabel="Sort By" Elevation="0" AllowUnsorted="false">
+		<HeaderContent>
+			<MudTh><MudTableSortLabel SortBy="new Func<BazaElemenata, object>(x => x.a)">Dužina</MudTableSortLabel></MudTh>
+			<MudTh><MudTableSortLabel SortBy="new Func<BazaElemenata, object>(x => x.b)">Visina</MudTableSortLabel></MudTh>
+			<MudTh><MudTableSortLabel SortBy="new Func<BazaElemenata, object>(x => x.c)">Širina</MudTableSortLabel></MudTh>
+			<MudTh><MudTableSortLabel SortBy="new Func<BazaElemenata, object>(x => x.naziv)">Naziv</MudTableSortLabel></MudTh>
+			<MudTh><MudTableSortLabel SortBy="new Func<BazaElemenata, object>(x => x.nazivArtikla)">Naziv artikla</MudTableSortLabel></MudTh>
+			<MudTh><MudTableSortLabel SortBy="new Func<BazaElemenata, object>(x => x.sifra)">Šifra</MudTableSortLabel></MudTh>
+		</HeaderContent>
+		<RowTemplate>
+			<MudTd DataLabel="Dužina">@context.a</MudTd>
+			<MudTd DataLabel="Visina">@context.b</MudTd>
+			<MudTd DataLabel="Širina">@context.c</MudTd>
+			<MudTd DataLabel="Naziv">@context.naziv</MudTd>
+			<MudTd DataLabel="Naziv artikla">@context.nazivArtikla</MudTd>
+			<MudTd DataLabel="Šifra">@context.sifra</MudTd>
+		</RowTemplate>
+		<PagerContent>
+			<MudTablePager PageSizeOptions="new int[] {20, 50, 100 }" />
+		</PagerContent>
+	</MudTable>
+</MudContainer>
+
+@code {
+	private BazaElemenata[]? elementbaza;
+	private BazaArtikla[]? artikalbaza;
+
+	protected override void OnInitialized()
+	{
+		var lista = new List<BazaElemenata>();
+		var random = new Random();
+
+		for (int i = 0; i < 100; i++)
+		{
+			lista.Add(new BazaElemenata
+			{
+				a = 555,
+				b = 44.4,
+				c = 10,
+				naziv = "Stiropor",
+				sifra = 5514420,
+				nazivArtikla = "Ormaric 123"
+			});
+		}
+		elementbaza = lista.ToArray();
+
+		artikalbaza = new BazaArtikla[]
+		{
+			new BazaArtikla { a = random.Next(1, 100), b = random.Next(1, 100), c = random.Next(1, 100), naziv = "Ormaric 123", sifra = 1001 },
+			new BazaArtikla { a = random.Next(1, 100), b = random.Next(1, 100), c = random.Next(1, 100), naziv = "Element A", sifra = 1002 },
+			new BazaArtikla { a = random.Next(1, 100), b = random.Next(1, 100), c = random.Next(1, 100), naziv = "Element B", sifra = 1003 }
+		};
+	}
+
+	private class BazaElemenata
+	{
+		public double a { get; set; }
+		public double b { get; set; }
+		public double c { get; set; }
+		public string? naziv { get; set; }
+		public string? nazivArtikla { get; set; }
+		public int sifra { get; set; }
+	}
+
+	private class BazaArtikla
+	{
+		public float a { get; set; }
+		public float b { get; set; }
+		public float c { get; set; }
+		public string naziv { get; set; }
+		public int sifra { get; set; }
+	}
+}

@@ -1,0 +1,88 @@
+﻿@page "/dodaj-gustine"
+@using Shared
+@inject HttpClient Http
+
+<MudContainer MaxWidth="MaxWidth.False" Class="mt-10">
+    <MudGrid>
+        <!-- Leva strana: Forma -->
+        <MudItem xs="12" md="6">
+            <MudPaper Elevation="4" Class="p-6 rounded-xl">
+                <MudText Typo="Typo.h5" Align="Align.Center" GutterBottom="true">Dodaj gustinu</MudText>
+
+                <MudTextField Label="Opis" @bind-Value="novaGustina.Opis" Variant="Variant.Outlined" FullWidth="true" Class="mb-4" />
+                <MudTextField T="double" Label="Vrednost" @bind-Value="novaGustina.Vrednost" Variant="Variant.Outlined" FullWidth="true" Class="mb-4" />
+
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="DodajGustinu" FullWidth="true">
+                    Sačuvaj
+                </MudButton>
+            </MudPaper>
+        </MudItem>
+
+        <!-- Desna strana: Tabela -->
+        <MudItem xs="12" md="6">
+            <MudPaper Elevation="4" Class="p-6 rounded-xl">
+                <MudText Typo="Typo.h5" Align="Align.Center" GutterBottom="true">Lista gustina</MudText>
+
+                <MudTable Items="listaGustina" Hover="true"  Class="rounded-xl">
+                    <HeaderContent>
+                        <MudTh>Opis</MudTh>
+                        <MudTh>Vrednost</MudTh>
+                        <MudTh>Akcija</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd>@context.Opis</MudTd>
+                        <MudTd>@context.Vrednost</MudTd>
+                        <MudTd>
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                           Color="Color.Error"
+                                           OnClick="@(() => ObrisiGustinu(context.Id))"
+                                           AriaLabel="Obriši gustinu" />
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private Gustina novaGustina = new();
+    private List<Gustina> listaGustina = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UcitajGustine();
+    }
+
+    private async Task UcitajGustine()
+    {
+        listaGustina = await Http.GetFromJsonAsync<List<Gustina>>("api/gustinas");
+    }
+
+    private async Task DodajGustinu()
+    {
+        var response = await Http.PostAsJsonAsync("api/gustinas", novaGustina);
+        if (response.IsSuccessStatusCode)
+        {
+            novaGustina = new();
+            await UcitajGustine();
+        }
+        else
+        {
+            // Dodaj prikaz greške ako želiš
+        }
+    }
+
+    private async Task ObrisiGustinu(int id)
+    {
+        var response = await Http.DeleteAsync($"api/gustinas/{id}");
+        if (response.IsSuccessStatusCode)
+        {
+            await UcitajGustine();
+        }
+        else
+        {
+            // Dodaj prikaz greške ako želiš
+        }
+    }
+}
