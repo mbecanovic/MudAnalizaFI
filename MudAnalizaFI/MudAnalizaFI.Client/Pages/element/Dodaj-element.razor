@@ -1,5 +1,107 @@
-﻿<h3>Dodaj_element</h3>
+﻿@page "/dodaj-element"
+@using Shared
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-10">
+    <MudPaper Elevation="4" Class="p-6">
+        <MudText Typo="Typo.h4" Align="Align.Center" GutterBottom="true">Dodaj novi element</MudText>
+
+        <MudGrid Class="mt-4" Spacing="3">
+            <MudItem xs="12" sm="6">
+                <MudTextField T="string" Label="Naziv" @bind-Value="noviElement.Naziv" Variant="Variant.Outlined" FullWidth="true" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField T="string" Label="Šifra" @bind-Value="noviElement.Sifra" Variant="Variant.Outlined" FullWidth="true" />
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudTextField T="double" Label="Dužina (cm)" @bind-Value="noviElement.Duzina" Variant="Variant.Outlined" FullWidth="true" Immediate="true" OnBlur="IzracunajTezinu" />
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudTextField T="double" Label="Širina (cm)" @bind-Value="noviElement.Sirina" Variant="Variant.Outlined" FullWidth="true" Immediate="true" OnBlur="IzracunajTezinu" />
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudTextField T="double" Label="Visina (cm)" @bind-Value="noviElement.Visina" Variant="Variant.Outlined" FullWidth="true" Immediate="true" OnBlur="IzracunajTezinu" />
+            </MudItem>
+
+            <MudItem xs="12" sm="6">
+                <MudSelect T="int" Label="Gustina (g/cm³)" @bind-Value="noviElement.GustinaId" FullWidth="true" OnChange="IzracunajTezinu">
+                    @if (gustine != null)
+                    {
+                        @foreach (var g in gustine)
+                        {
+                            <MudSelectItem T="int" Value="@g.Id">@($"{g.Opis} ({g.Vrednost} kg/m³)")</MudSelectItem>
+                        }
+                    }
+                </MudSelect>
+            </MudItem>
+
+            <MudItem xs="12" sm="6">
+                <MudSelect T="int" Label="Paket" @bind-Value="noviElement.PaketId" FullWidth="true">
+                    @if (paketi != null)
+                    {
+                        @foreach (var p in paketi)
+                        {
+                            <MudSelectItem T="int" Value="@p.Id">@($"Paket {p.SifraPaketa}")</MudSelectItem>
+                        }
+                    }
+                </MudSelect>
+            </MudItem>
+
+        </MudGrid>
+
+        <MudDivider Class="my-4" />
+
+        <MudGrid Justify="Justify.Center">
+            <MudItem>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="DodajElement" Style="padding: 12px 30px;">
+                    Sačuvaj element
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+</MudContainer>
 
 @code {
+    private Element noviElement = new();
+    private List<Gustina> gustine = new();
+    private List<Paket> paketi = new();
 
+    protected override async Task OnInitializedAsync()
+    {
+        gustine = await Http.GetFromJsonAsync<List<Gustina>>("api/Gustinas");
+        paketi = await Http.GetFromJsonAsync<List<Paket>>("api/Pakets");
+    }
+
+    private async Task DodajElement()
+    {
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/Elements", noviElement);
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Element uspešno dodat!", Severity.Success);
+                noviElement = new(); // Reset forma
+            }
+            else
+            {
+                Snackbar.Add($"Greška: {response.StatusCode}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Greška: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void IzracunajTezinu()
+    {
+        var gustina = gustine.FirstOrDefault(g => g.Id == noviElement.GustinaId);
+        if (gustina != null && noviElement.Visina > 0 && noviElement.Sirina > 0 && noviElement.Duzina > 0)
+        {
+            // pretvaramo iz cm³ u m³ -> cm³ / 1_000_000
+            double zapreminaUM3 = (noviElement.Visina * noviElement.Sirina * noviElement.Duzina) / 1_000_000;
+            noviElement.Tezina = Math.Round(zapreminaUM3 * gustina.Vrednost, 3);
+        }
+    }
 }

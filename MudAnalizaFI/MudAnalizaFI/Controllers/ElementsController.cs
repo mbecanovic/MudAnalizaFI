@@ -78,6 +78,18 @@ namespace MudAnalizaFI.Controllers
         [HttpPost]
         public async Task<ActionResult<Element>> PostElement(Element element)
         {
+            var gustina = await _context.Gustine.FindAsync(element.GustinaId);
+            if (gustina == null) return BadRequest("Nepostojeca gustina.");
+            
+
+
+            element.Tezina = element.Duzina * element.Sirina * element.Visina * gustina.Vrednost;
+
+            if (gustina.Opis == "stiropor" || gustina.Opis == "Stiropor" || gustina.Opis == "Lesonit" || element.Tezina < 3) element.BrRadnika = 0.5;
+            if(element.Tezina == 8) element.BrRadnika = 2;
+            if (element.Tezina >= 3 & element.Tezina < 8) element.BrRadnika = 1;
+            element.Naziv = gustina.Opis;
+            element.Datum = DateTime.Now;
             _context.Elementi.Add(element);
             await _context.SaveChangesAsync();
 
