@@ -1,6 +1,10 @@
 ﻿@page "/dodaj-gustine"
 @using Shared
+@using Components
 @inject HttpClient Http
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
 
 <MudContainer MaxWidth="MaxWidth.False" Class="mt-10">
     <MudGrid>
@@ -9,8 +13,8 @@
             <MudPaper Elevation="4" Class="p-6 rounded-xl">
                 <MudText Typo="Typo.h5" Align="Align.Center" GutterBottom="true">Dodaj gustinu</MudText>
 
-                <MudTextField Label="Opis" @bind-Value="novaGustina.Opis" Variant="Variant.Outlined" FullWidth="true" Class="mb-4" />
-                <MudTextField T="double" Label="Vrednost" @bind-Value="novaGustina.Vrednost" Variant="Variant.Outlined" FullWidth="true" Class="mb-4" />
+                <MudTextField Label="Materijal" @bind-Value="novaGustina.Opis" Variant="Variant.Outlined" FullWidth="true" Class="mb-4" />
+                <MudTextField T="double" Label="Vrednost gustine (kg/m³)" @bind-Value="novaGustina.Vrednost" Variant="Variant.Outlined" FullWidth="true" Class="mb-4" />
 
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="DodajGustinu" FullWidth="true">
                     Sačuvaj
@@ -73,16 +77,30 @@
         }
     }
 
+
     private async Task ObrisiGustinu(int id)
     {
-        var response = await Http.DeleteAsync($"api/gustinas/{id}");
-        if (response.IsSuccessStatusCode)
+        try
         {
-            await UcitajGustine();
+            var dialog = await DialogService.ShowAsync<PotvrdaBrisanjaGustine>("Potvrda brisanja");
+            var result = await dialog.Result;
+
+            if (!result.Canceled)
+            {
+                var response = await Http.DeleteAsync($"api/gustinas/{id}");
+                if (response.IsSuccessStatusCode)
+                {
+                    await UcitajGustine();
+                }
+                else
+                {
+                    Snackbar.Add("Greška prilikom brisanja gustine.", Severity.Error);
+                }
+            }
         }
-        else
+        catch (Exception ex)
         {
-            // Dodaj prikaz greške ako želiš
-        }
+            Snackbar.Add($"Greška: {ex.Message}", Severity.Error);
+		}
     }
 }

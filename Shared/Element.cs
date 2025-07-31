@@ -16,7 +16,7 @@
 
         public int GustinaId { get; set; }
 
-        [JsonIgnore]
+        
         public virtual Gustina? Gustina { get; set; }
 
         public int PaketId { get; set; }

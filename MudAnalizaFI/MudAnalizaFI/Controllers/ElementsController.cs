@@ -25,7 +25,10 @@ namespace MudAnalizaFI.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Element>>> GetElementi()
         {
-            return await _context.Elementi.ToListAsync();
+            var elementi = await _context.Elementi
+            .Include(e => e.Gustina)
+            .ToListAsync();
+            return elementi;
         }
 
         // GET: api/Elements/5
@@ -80,14 +83,19 @@ namespace MudAnalizaFI.Controllers
         {
             var gustina = await _context.Gustine.FindAsync(element.GustinaId);
             if (gustina == null) return BadRequest("Nepostojeca gustina.");
-            
 
+            var postoji = await _context.Elementi
+            .AnyAsync(e => e.Sifra == element.Sifra);
 
-            element.Tezina = element.Duzina * element.Sirina * element.Visina * gustina.Vrednost;
+            if (postoji) return BadRequest("Element sa ovom sifrom vec postoji.");
+
+            element.Tezina = Math.Round(element.Duzina * element.Sirina * element.Visina * gustina.Vrednost, 2);
+
 
             if (gustina.Opis == "stiropor" || gustina.Opis == "Stiropor" || gustina.Opis == "Lesonit" || element.Tezina < 3) element.BrRadnika = 0.5;
             if(element.Tezina == 8) element.BrRadnika = 2;
             if (element.Tezina >= 3 & element.Tezina < 8) element.BrRadnika = 1;
+            if(element.Tezina > 8 || element.Tezina == 0) return BadRequest("Tezina elementa je veca od 8kg, molimo proverite parametre.");
             element.Naziv = gustina.Opis;
             element.Datum = DateTime.Now;
             _context.Elementi.Add(element);

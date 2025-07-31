@@ -1,0 +1,28 @@
+﻿@using MudBlazor
+
+<MudDialog>
+    <DialogContent>
+        <MudText Typo="Typo.body1">
+            Da li ste sigurni da želite da izbrišete ovu gustinu? Ako je obrišete, svi elementi pod ovim nazivom će biti obrisani.
+        </MudText>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@Otkazi" Color="Color.Default">Otkaži</MudButton>
+        <MudButton OnClick="@Potvrdi" Color="Color.Error" Variant="Variant.Filled">OK</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    public IMudDialogInstance MudDialog { get; set; }
+
+    private void Otkazi()
+    {
+        MudDialog.Cancel();
+    }
+
+    private void Potvrdi()
+    {
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+}

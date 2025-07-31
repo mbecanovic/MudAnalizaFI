@@ -40,22 +40,22 @@
 	<h1 class="mt-5">Baza elemenata</h1>
 	<MudTable Items="elementi" Hover="true" SortLabel="Sort By" Elevation="0" AllowUnsorted="false">
 		<HeaderContent>
-			<MudTh><MudTableSortLabel SortBy="new Func<Element, object>(x => x.Naziv)">Naziv</MudTableSortLabel></MudTh>
-			<MudTh><MudTableSortLabel SortBy="new Func<Element, object>(x => x.Duzina)">Dužina</MudTableSortLabel></MudTh>
-			<MudTh><MudTableSortLabel SortBy="new Func<Element, object>(x => x.Visina)">Visina</MudTableSortLabel></MudTh>
-			<MudTh><MudTableSortLabel SortBy="new Func<Element, object>(x => x.Sirina)">Širina</MudTableSortLabel></MudTh>
 			<MudTh><MudTableSortLabel SortBy="new Func<Element, object>(x => x.Sifra)">Šifra</MudTableSortLabel></MudTh>
+			<MudTh><MudTableSortLabel SortBy="new Func<Element, string>(x => x.Gustina.Opis)">Naziv</MudTableSortLabel></MudTh>
+			<MudTh><MudTableSortLabel SortBy="new Func<Element, object>(x => x.Duzina)">Dužina (m)</MudTableSortLabel></MudTh>
+			<MudTh><MudTableSortLabel SortBy="new Func<Element, object>(x => x.Sirina)">Širina (m)</MudTableSortLabel></MudTh>
+			<MudTh><MudTableSortLabel SortBy="new Func<Element, object>(x => x.Visina)">Visina (m)</MudTableSortLabel></MudTh>
 			<MudTh><MudTableSortLabel SortBy="new Func<Element, object>(x => x.Tezina)">Tezina</MudTableSortLabel></MudTh>
 			<MudTh><MudTableSortLabel SortBy="new Func<Element, object>(x => x.BrRadnika)">Broj radnika</MudTableSortLabel></MudTh>
 			<MudTh><MudTableSortLabel SortBy="new Func<Element, object>(x => x.Datum)">Datum unosa</MudTableSortLabel></MudTh>
 
 		</HeaderContent>
 		<RowTemplate>
-			<MudTd DataLabel="Naziv">@context.Naziv</MudTd>
-			<MudTd DataLabel="Dužina">@context.Duzina</MudTd>
-			<MudTd DataLabel="Visina">@context.Visina</MudTd>
-			<MudTd DataLabel="Širina">@context.Sirina</MudTd>
 			<MudTd DataLabel="Šifra">@context.Sifra</MudTd>
+			<MudTd DataLabel="Gustina">@context.Gustina?.Opis</MudTd>
+			<MudTd DataLabel="Dužina">@context.Duzina</MudTd>
+			<MudTd DataLabel="Širina">@context.Sirina</MudTd>
+			<MudTd DataLabel="Visina">@context.Visina</MudTd>
 			<MudTd DataLabel="Težina">@context.Tezina</MudTd>
 			<MudTd DataLabel="Težina">@context.BrRadnika</MudTd>
 			<MudTd DataLabel="Datum unosa">@context.Datum</MudTd>
