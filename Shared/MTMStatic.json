@@ -1,0 +1,58 @@
+{
+    "zones": [
+        {
+            "name": "Zona 1",
+            "conditions": {
+                "length": "<800",
+                "area": "<0.09",
+                "weight": "<1"
+            },
+            "codes": {
+                "AB": [ 1.08, 1.62, 2.16 ],
+                "AA": [ 0.72, 1.26, 1.8 ],
+                "AC": [ 1.44, 1.98, 2.52 ]
+            }
+        },
+        {
+            "name": "Zona 2",
+            "conditions": {
+                "length": ">800",
+                "area": "<0.09",
+                "weight": "<1"
+            },
+            "maxWeight": 8,
+            "codes": {
+                "AJ": [ 1.44, 2.34, 2.7 ],
+                "AH": [ 0.9, 1.62, 1.98 ],
+                "AK": [ 1.8, 2.7, 3.06 ]
+            }
+        },
+        {
+            "name": "Zona 3",
+            "conditions": {
+                "length": ">800",
+                "area": ">0.09",
+                "weight": ">1"
+            },
+            "maxWeight": 8,
+            "codes": {
+                "AM": [ 3.42, 4.32, 4.68 ],
+                "AL": [ 2.88, 3.78, 4.14 ],
+                "AN": [ 4.32, 5.22, 5.76 ]
+            }
+        }
+    ],
+    "specialRules": {
+        "KA": {
+            "description": "Okret za 180 stepeni",
+            "distance": 1
+        },
+        "PB3": {
+            "condition": {
+                "length": ">1300",
+                "weight": "<8"
+            },
+            "description": "Pozicioniranje zbog dužine"
+        }
+    }
+}

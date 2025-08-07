@@ -91,6 +91,7 @@ namespace MudAnalizaFI.Controllers
 
             element.Tezina = Math.Round(element.Duzina * element.Sirina * element.Visina * gustina.Vrednost, 2);
 
+            element.Povrsina = Math.Round(element.Duzina * element.Sirina, 2); //u metrima kvadratnim
 
             if (gustina.Opis == "stiropor" || gustina.Opis == "Stiropor" || gustina.Opis == "Lesonit" || element.Tezina < 3) element.BrRadnika = 0.5;
             if(element.Tezina == 8) element.BrRadnika = 2;
@@ -120,9 +121,27 @@ namespace MudAnalizaFI.Controllers
             return NoContent();
         }
 
+        [HttpGet("sabloni/{id}/elementi")]
+        public async Task<IActionResult> GetElementiZaSablon(int id)
+        {
+            var elementi = await _context.Elementi
+                .Where(e => e.SablonId == id)
+                .Include(e => e.Gustina) // ostavi ako ti treba povezani entitet
+                .ToListAsync();
+
+            if (!elementi.Any())
+            {
+                return NotFound($"Nema elemenata za šablon sa ID {id}.");
+            }
+
+            return Ok(elementi);
+        }
+
+
         private bool ElementExists(int id)
         {
             return _context.Elementi.Any(e => e.Id == id);
         }
+        
     }
 }

@@ -1,0 +1,102 @@
+﻿@page "/sablon/{id:int}"
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+
+<h1 class="mb-4">Detalji šablona</h1>
+@if (sablon == null)
+{
+    <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+}
+else
+{
+    <MudPaper Class="p-6 mt-4" Elevation="2">
+        <MudText><b>Naziv:</b> @sablon.Naziv</MudText>
+        <MudText><b>Opis:</b> @sablon.Sifra</MudText>
+        <MudText><b>Kodovi:</b> @string.Join(", ", sablon.Kod)</MudText>
+        <MudText><b>Ukupno vreme:</b> @sablon.Vreme</MudText>
+    </MudPaper>
+
+    <MudDivider Class="my-4" />
+
+    <h1 class="mb-4">Dodavanje elemenata po šifri</h1>
+    <MudItem>
+        <MudTextField @bind-Value="sifra1" Label="Šifra elementa" Variant="Variant.Outlined" Margin="Margin.Dense" />
+        <MudTextField @bind-Value="sifra2" Label="Šifra elementa" Variant="Variant.Outlined" Margin="Margin.Dense" />
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="DodajElementePoSifri">Dodaj elemente</MudButton>
+    </MudItem>
+
+    <MudDivider Class="my-4" />
+
+    <MudTable Items="@(elementiList)" Hover="true" Striped="true">
+        <HeaderContent>
+            <MudTh>Šifra</MudTh>
+            <MudTh>Opis</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Šifra">@context.Sifra</MudTd>
+            <MudTd DataLabel="Opis">@context.Naziv</MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    [Parameter]
+    public int id { get; set; }
+
+    private Shared.Sablon sablon;
+    private List<Shared.Element> elementiList = new();
+    private string sifra1 = string.Empty;
+    private string sifra2 = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            sablon = await Http.GetFromJsonAsync<Shared.Sablon>($"api/Sablons/{id}");
+            elementiList = await Http.GetFromJsonAsync<List<Shared.Element>>($"api/Elements/sabloni/{id}/elementi");
+        }
+        catch (Exception ex)
+        {
+            //Snackbar.Add($"Greška pri učitavanju šablona: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task DodajElementePoSifri()
+    {
+        try
+        {
+            var sifre = new List<string>();
+
+            if (!string.IsNullOrWhiteSpace(sifra1))
+                sifre.Add(sifra1);
+            if (!string.IsNullOrWhiteSpace(sifra2))
+                sifre.Add(sifra2);
+
+            if (sifre.Count == 0)
+            {
+                Snackbar.Add("Unesi bar jednu šifru.", Severity.Warning);
+                return;
+            }
+
+            var response = await Http.PutAsJsonAsync($"api/Sablons/{id}/dodaj-po-sifri", sifre);
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Elementi su uspešno dodati šablonu.", Severity.Success);
+                sifra1 = string.Empty;
+                sifra2 = string.Empty;
+
+                // Osveži tabelu elemenata
+                elementiList = await Http.GetFromJsonAsync<List<Shared.Element>>($"api/Elements/sabloni/{id}/elementi");
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Snackbar.Add($"Greška: {error}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Greška pri slanju zahteva: {ex.Message}", Severity.Error);
+        }
+    }
+}

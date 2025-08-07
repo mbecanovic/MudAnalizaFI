@@ -1,0 +1,238 @@
+﻿@page "/baza-sablona"
+@using Shared
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+@inject NavigationManager NavigationManager
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-10">
+    <MudPaper Elevation="4" Class="p-6">
+
+        <MudText Typo="Typo.h4" Align="Align.Center" GutterBottom="true">
+            Baza šablona
+        </MudText>
+
+        <MudGrid Class="mt-4" Spacing="3">
+            <MudItem xs="12" sm="6">
+                <MudTextField T="string" Label="Naziv šablona" @bind-Value="noviSablon.Naziv" Variant="Variant.Outlined" FullWidth="true" />
+            </MudItem>
+
+            <MudItem xs="12" sm="6">
+                <MudTextField T="string" Label="Opis šablona" @bind-Value="noviSablon.Sifra" Variant="Variant.Outlined" FullWidth="true" />
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField T="int?" Label="Kvantitet 1"
+                              Value="@kvantitet1"
+                              ValueChanged="@OnKvantitet1Changed"
+                              FullWidth="true" />
+
+                <MudSelect T="int?" Label="Gustina (kg/m³)"
+                           Value="@value1"
+                           ValueChanged="@OnGustina1Changed"
+                           FullWidth="true">
+                    @if (gustine != null)
+                    {
+                        @foreach (var g in gustine)
+                        {
+                            <MudSelectItem T="int?" Value="@g.Id">@($"{g.Opis} ({g.Vrednost} kg/m³)")</MudSelectItem>
+                        }
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField T="int?" Label="Kvantitet 2"
+                              Value="@kvantitet1"
+                              ValueChanged="@OnKvantitet2Changed"
+                              FullWidth="true" />
+
+                <MudSelect T="int?" Label="Gustina (kg/m³)"
+                           Value="@value2"
+                           ValueChanged="@OnGustina2Changed"
+                           FullWidth="true">
+                    @if (gustine != null)
+                    {
+                        @foreach (var g in gustine)
+                        {
+                            <MudSelectItem T="int?" Value="@g.Id">@($"{g.Opis} ({g.Vrednost} kg/m³)")</MudSelectItem>
+                        }
+                    }
+                </MudSelect>
+
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudTextField T="string"
+                              @bind-Value="kodoviInput"
+                              Label="Unesite kodove (npr. AB, CD, EF)"
+                              Placeholder="Razdvoj zarezom, razmakom ili novim redom"
+                              Lines="3"
+                              Text="@kodoviInput"
+							  Margin="Margin.Dense"
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Code" />
+            </MudItem>
+
+        </MudGrid>
+
+        <MudDivider Class="my-4" />
+
+        <MudGrid Justify="Justify.Center">
+            <MudItem>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="DodajSablon" Style="padding: 12px 30px;">
+                    Sačuvaj šablon
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+
+    </MudPaper>
+
+    <MudGrid Class="mt-4" Spacing="3">
+        @foreach (var sablon in listaSablona)
+        {
+            <MudItem xs="12" sm="6">
+                <MudPaper Elevation="2" Class="p-4" @onclick="() => DetailNavigate(sablon.Id)">
+                    <MudText Typo="Typo.h6" GutterBottom="true">@sablon.Naziv</MudText>
+                    <MudText Typo="Typo.body2">@sablon.Sifra</MudText>
+                    <MudText Typo="Typo.body2">@sablon.Kod</MudText>
+                </MudPaper>
+            </MudItem>
+        }
+    </MudGrid>
+
+    
+</MudContainer>
+
+@code {
+    private Shared.Sablon noviSablon = new Shared.Sablon();
+    private List<Shared.Sablon> listaSablona = new List<Shared.Sablon>();
+    private List<Gustina> gustine = new();
+    private List<int>? elementi = new List<int>();
+    private List<int>? kvantitet = new List<int>();
+    private int? kvantitet1;
+    private int? kvantitet2;
+    private int? value1;
+    private int? value2;
+    private string kodoviInput = string.Empty;
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        gustine = await Http.GetFromJsonAsync<List<Gustina>>("api/Gustinas");
+        await UcitajSablone();
+    }
+
+    private async Task UcitajSablone()
+    {
+        try
+        {
+            listaSablona = await Http.GetFromJsonAsync<List<Shared.Sablon>>("api/Sablons");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Greška pri učitavanju šablona: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task DodajSablon()
+    {   
+        noviSablon.Kod = kodoviInput
+        .Split(new[] { ',', '\n', '\r', ' ' }, StringSplitOptions.RemoveEmptyEntries)
+        .Select(k => k.Trim())
+        .ToList(); 
+        noviSablon.Vreme = Shared.Functions.IzracunajVremeSablona.IzracunajUkupnuVrednost(noviSablon.Kod);
+
+        if (string.IsNullOrWhiteSpace(noviSablon.Naziv) || string.IsNullOrWhiteSpace(noviSablon.Sifra))
+        {
+            Snackbar.Add("Molimo unesite naziv i opis šablona.", Severity.Warning);
+            return;
+        }
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/Sablons", noviSablon);
+            if (response.IsSuccessStatusCode)
+            {
+
+                Snackbar.Add("Šablon uspešno sačuvan.", Severity.Success);
+                await UcitajSablone();
+                noviSablon = new Shared.Sablon(); // Reset forme
+            }
+            else
+            {
+                Snackbar.Add("Greška pri čuvanju šablona.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Greška pri čuvanju šablona: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void DetailNavigate(int id)
+    {
+        NavigationManager.NavigateTo($"/sablon/{id}");
+    }
+
+    private async Task makeArray()
+    {
+
+        if (value1.HasValue && !elementi.Contains(value1.Value))
+            elementi.Add(value1.Value);
+
+        if (value2.HasValue && !elementi.Contains(value2.Value))
+            elementi.Add(value2.Value);
+
+        noviSablon.GustinaId = elementi;
+    }
+    private async Task OnGustina1Changed(int? selected)
+    {
+        value1 = selected;
+        UpdateGustine();
+    }
+
+    private async Task OnKvantitet1Changed(int? val)
+    {
+        kvantitet1 = val;
+        UpdateKvantitet();
+    }
+
+    private async Task OnGustina2Changed(int? selected)
+    {
+        value2 = selected;
+        UpdateGustine();
+    }
+    private async Task OnKvantitet2Changed(int? val)
+    {
+        kvantitet2 = val;
+        UpdateKvantitet();
+    }
+
+
+    private void UpdateGustine()
+    {
+        var lista = new List<int>();
+
+        if (value1.HasValue)
+            lista.Add(value1.Value);
+
+        if (value2.HasValue && value2 != value1) // izbegni duplikate
+            lista.Add(value2.Value);
+
+        noviSablon.GustinaId = lista;
+    }
+    private void UpdateKvantitet()
+    {
+        var lista = new List<int>();
+
+        if (kvantitet1.HasValue)
+            lista.Add(kvantitet1.Value);
+
+        if (kvantitet2.HasValue && kvantitet2 != kvantitet1) // da nema duplih
+            lista.Add(kvantitet2.Value);
+
+        noviSablon.Kvantitet = lista;
+    }
+
+
+
+
+
+}

@@ -11,18 +11,20 @@
         public double Sirina { get; set; }
         public double Visina { get; set; }
         public double Tezina { get; set; }
+        public double? Povrsina { get; set; }
         public double? BrRadnika { get; set; }
         public DateTime? Datum { get; set; }
 
         public int GustinaId { get; set; }
-
-        
         public virtual Gustina? Gustina { get; set; }
 
         public int PaketId { get; set; }
 
         [JsonIgnore]
         public virtual Paket? Paket { get; set; }
+
+        public int? SablonId { get; set; }
+        public virtual Sablon? Sablon { get; set; }
     }
 
 }

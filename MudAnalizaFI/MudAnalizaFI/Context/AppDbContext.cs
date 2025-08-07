@@ -13,14 +13,12 @@ namespace MudAnalizaFI.Context
         public DbSet<Paket> Paketi { get; set; }
         public DbSet<Element> Elementi { get; set; }
         public DbSet<Gustina> Gustine { get; set; }
+        public DbSet<Sablon> Sabloni { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            /*modelBuilder.Entity<Element>()
-                .HasOne(e => e.Gustina)
-                .WithMany()
-                .HasForeignKey(e => e.GustinaId)
-                .OnDelete(DeleteBehavior.Restrict); // ← Ovde sprečavaš brisanje povezanih elemenata*/
+            
 
         }
     }

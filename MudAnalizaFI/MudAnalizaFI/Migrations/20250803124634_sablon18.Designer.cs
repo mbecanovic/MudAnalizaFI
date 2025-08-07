@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MudAnalizaFI.Context;
 
@@ -11,9 +12,11 @@ using MudAnalizaFI.Context;
 namespace MudAnalizaFI.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250803124634_sablon18")]
+    partial class sablon18
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -47,9 +50,6 @@ namespace MudAnalizaFI.Migrations
 
                     b.Property<int>("PaketId")
                         .HasColumnType("int");
-
-                    b.Property<double?>("Povrsina")
-                        .HasColumnType("float");
 
                     b.Property<int?>("SablonId")
                         .HasColumnType("int");
@@ -88,15 +88,10 @@ namespace MudAnalizaFI.Migrations
                     b.Property<string>("Opis")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("SablonId")
-                        .HasColumnType("int");
-
                     b.Property<double>("Vrednost")
                         .HasColumnType("float");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("SablonId");
 
                     b.ToTable("Gustine");
                 });
@@ -135,18 +130,6 @@ namespace MudAnalizaFI.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.PrimitiveCollection<string>("GustinaId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.PrimitiveCollection<string>("Kod")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.PrimitiveCollection<string>("Kvantitet")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("Naziv")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -154,9 +137,6 @@ namespace MudAnalizaFI.Migrations
                     b.Property<string>("Sifra")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<double?>("Vreme")
-                        .HasColumnType("float");
 
                     b.HasKey("Id");
 
@@ -178,21 +158,15 @@ namespace MudAnalizaFI.Migrations
                         .IsRequired();
 
                     b.HasOne("Shared.Sablon", "Sablon")
-                        .WithMany()
-                        .HasForeignKey("SablonId");
+                        .WithMany("Elementi")
+                        .HasForeignKey("SablonId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Gustina");
 
                     b.Navigation("Paket");
 
                     b.Navigation("Sablon");
-                });
-
-            modelBuilder.Entity("Shared.Gustina", b =>
-                {
-                    b.HasOne("Shared.Sablon", null)
-                        .WithMany("Gustine")
-                        .HasForeignKey("SablonId");
                 });
 
             modelBuilder.Entity("Shared.Paket", b =>
@@ -202,7 +176,7 @@ namespace MudAnalizaFI.Migrations
 
             modelBuilder.Entity("Shared.Sablon", b =>
                 {
-                    b.Navigation("Gustine");
+                    b.Navigation("Elementi");
                 });
 #pragma warning restore 612, 618
         }
