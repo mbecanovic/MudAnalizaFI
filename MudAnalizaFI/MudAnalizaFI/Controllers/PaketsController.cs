@@ -39,6 +39,22 @@ namespace MudAnalizaFI.Controllers
             return paket;
         }
 
+        [HttpGet("sifra/{sifraPaketa}")]
+        public async Task<ActionResult<Paket>> GetPaketBySifra(string sifraPaketa)
+        {
+            var paket = await _context.Paketi
+                .FirstOrDefaultAsync(p => p.SifraPaketa == sifraPaketa);
+
+            if (paket == null)
+            {
+                return NotFound();
+            }
+
+            return paket;
+        }
+
+
+
         // POST: api/Pakets
         [HttpPost]
         public async Task<ActionResult<Paket>> CreatePaket(Paket paket)

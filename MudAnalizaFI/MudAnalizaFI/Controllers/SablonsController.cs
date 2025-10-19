@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MudAnalizaFI.Context;
 using Shared;
+using Shared.Functions;
 
 namespace MudAnalizaFI.Controllers
 {
@@ -125,9 +126,16 @@ namespace MudAnalizaFI.Controllers
             foreach (var element in elementi)
             {
                 element.SablonId = sablonId;
+                element.Kod = string.Join(",", sablon.Kod); // Upisuje kod
+                element.Vreme = sablon.Vreme; // Dodeljuje vreme iz sablona 
             }
 
             await _context.SaveChangesAsync();
+            // Replace this line:
+            // CheckCode.PrintElement(elementi, sablon);
+
+            // With this line:
+            CheckCode.PrintElement(elementi, sablon);
             return Ok("Elementi su uspešno dodeljeni šablonu.");
         }
 

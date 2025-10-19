@@ -5,6 +5,20 @@
 @inject ISnackbar Snackbar
 @inject NavigationManager Navigation
 
+
+<style>
+	.no-overflow {
+		overflow: visible !important; /* spreči da MudContainer "pojede" sticky */
+	}
+
+	/* (opciono) ako želiš da se uveriš da samo telo tabele skroluje */
+	.table-fixed .mud-table-container {
+		overflow-y: auto;
+	}
+
+</style>
+
+
 <MudContainer class="mt-3">
 	<MudText Typo="Typo.h3" Align="Align.Center" GutterBottom="true">Baza elemenata</MudText>
 	<MudText Typo="Typo.body1" Align="Align.Center" GutterBottom="true">Unesi novi paket ili dodaj element</MudText>
@@ -36,9 +50,9 @@
 	</MudGrid>
 </MudContainer>
 
-<MudContainer class="mt-5">
+<MudContainer class="mt-5 no-overflow">
 	<h1 class="mt-5">Baza elemenata</h1>
-	<MudTable Items="elementi" Hover="true" SortLabel="Sort By" Elevation="0" AllowUnsorted="false">
+	<MudTable Items="elementi" Hover="true" SortLabel="Sort By" Elevation="0" AllowUnsorted="false" FixedHeader="true" Height="300">
 		<HeaderContent>
 			<MudTh><MudTableSortLabel SortBy="new Func<Element, object>(x => x.Sifra)">Šifra</MudTableSortLabel></MudTh>
 			<MudTh><MudTableSortLabel SortBy="new Func<Element, string>(x => x.Gustina.Opis)">Naziv</MudTableSortLabel></MudTh>
@@ -46,7 +60,10 @@
 			<MudTh><MudTableSortLabel SortBy="new Func<Element, object>(x => x.Sirina)">Širina (m)</MudTableSortLabel></MudTh>
 			<MudTh><MudTableSortLabel SortBy="new Func<Element, object>(x => x.Visina)">Visina (m)</MudTableSortLabel></MudTh>
 			<MudTh><MudTableSortLabel SortBy="new Func<Element, object>(x => x.Tezina)">Tezina</MudTableSortLabel></MudTh>
+			<MudTh><MudTableSortLabel SortBy="new Func<Element, object>(x => x.Povrsina)">Povrsina</MudTableSortLabel></MudTh>
 			<MudTh><MudTableSortLabel SortBy="new Func<Element, object>(x => x.BrRadnika)">Broj radnika</MudTableSortLabel></MudTh>
+			<MudTh><MudTableSortLabel SortBy="new Func<Element, object>(x => x.Kod)">Kod</MudTableSortLabel></MudTh>
+			<MudTh><MudTableSortLabel SortBy="new Func<Element, object>(x => x.Vreme)">Vreme</MudTableSortLabel></MudTh>
 			<MudTh><MudTableSortLabel SortBy="new Func<Element, object>(x => x.Datum)">Datum unosa</MudTableSortLabel></MudTh>
 
 		</HeaderContent>
@@ -57,7 +74,10 @@
 			<MudTd DataLabel="Širina">@context.Sirina</MudTd>
 			<MudTd DataLabel="Visina">@context.Visina</MudTd>
 			<MudTd DataLabel="Težina">@context.Tezina</MudTd>
-			<MudTd DataLabel="Težina">@context.BrRadnika</MudTd>
+			<MudTd DataLabel="Povrsina">@context.Povrsina</MudTd>
+			<MudTd DataLabel="Broj radnika">@context.BrRadnika</MudTd>
+			<MudTd DataLabel="Kod">@context.Kod</MudTd>
+			<MudTd DataLabel="Vreme">@context.Vreme</MudTd>
 			<MudTd DataLabel="Datum unosa">@context.Datum</MudTd>
 		</RowTemplate>
 		<PagerContent>
@@ -72,7 +92,14 @@
 
 	protected override async Task OnInitializedAsync()
 	{
-		elementi = await Http.GetFromJsonAsync<List<Element>>("api/Elements");
+		try
+		{
+			elementi = await Http.GetFromJsonAsync<List<Element>>("api/Elements");
+		}
+		catch (Exception ex)
+		{
+			Snackbar.Add($"Trenutno nema elementata u bazi", Severity.Warning);
+		}
 	}
 }
 

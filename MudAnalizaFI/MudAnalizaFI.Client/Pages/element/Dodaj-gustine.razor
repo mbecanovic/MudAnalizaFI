@@ -55,12 +55,20 @@
 
     protected override async Task OnInitializedAsync()
     {
+
         await UcitajGustine();
     }
 
     private async Task UcitajGustine()
     {
-        listaGustina = await Http.GetFromJsonAsync<List<Gustina>>("api/gustinas");
+        try
+        {
+            listaGustina = await Http.GetFromJsonAsync<List<Gustina>>("api/Gustinas");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Greška pri učitavanju gustina: {ex.Message}", Severity.Warning);
+		}
     }
 
     private async Task DodajGustinu()

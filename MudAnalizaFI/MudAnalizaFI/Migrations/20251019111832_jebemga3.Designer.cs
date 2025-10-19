@@ -12,8 +12,8 @@ using MudAnalizaFI.Context;
 namespace MudAnalizaFI.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250805171218_sablon2")]
-    partial class sablon2
+    [Migration("20251019111832_jebemga3")]
+    partial class jebemga3
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -45,6 +45,9 @@ namespace MudAnalizaFI.Migrations
                     b.Property<int>("GustinaId")
                         .HasColumnType("int");
 
+                    b.Property<string>("Kod")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Naziv")
                         .HasColumnType("nvarchar(max)");
 
@@ -67,6 +70,9 @@ namespace MudAnalizaFI.Migrations
                         .HasColumnType("float");
 
                     b.Property<double>("Visina")
+                        .HasColumnType("float");
+
+                    b.Property<double?>("Vreme")
                         .HasColumnType("float");
 
                     b.HasKey("Id");
@@ -102,6 +108,31 @@ namespace MudAnalizaFI.Migrations
                     b.HasIndex("SablonId");
 
                     b.ToTable("Gustine");
+                });
+
+            modelBuilder.Entity("Shared.OperacionaLista", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<double?>("BrzinaLinijeUMinuti")
+                        .HasColumnType("float");
+
+                    b.Property<DateTime?>("DatumKreiranja")
+                        .HasColumnType("datetime2");
+
+                    b.Property<double>("DuzinaPaketa")
+                        .HasColumnType("float");
+
+                    b.Property<int>("SifraPaketa")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("OperacionaLista");
                 });
 
             modelBuilder.Entity("Shared.Paket", b =>
@@ -154,16 +185,55 @@ namespace MudAnalizaFI.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Opis")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("Sifra")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<double?>("Vreme")
+                        .HasColumnType("float");
+
                     b.HasKey("Id");
 
                     b.ToTable("Sabloni");
+                });
+
+            modelBuilder.Entity("Shared.TextFieldItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ElementId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("Kvartal")
+                        .HasColumnType("int");
+
+                    b.Property<int>("OperacionaListaId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("PodElementId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("RedniBroj")
+                        .HasColumnType("int");
+
+                    b.Property<double?>("Vreme")
+                        .HasColumnType("float");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ElementId");
+
+                    b.HasIndex("OperacionaListaId");
+
+                    b.HasIndex("PodElementId")
+                        .IsUnique()
+                        .HasFilter("[PodElementId] IS NOT NULL");
+
+                    b.ToTable("TextFieldItems");
                 });
 
             modelBuilder.Entity("Shared.Element", b =>
@@ -175,7 +245,7 @@ namespace MudAnalizaFI.Migrations
                         .IsRequired();
 
                     b.HasOne("Shared.Paket", "Paket")
-                        .WithMany("Elementi")
+                        .WithMany()
                         .HasForeignKey("PaketId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -198,9 +268,35 @@ namespace MudAnalizaFI.Migrations
                         .HasForeignKey("SablonId");
                 });
 
-            modelBuilder.Entity("Shared.Paket", b =>
+            modelBuilder.Entity("Shared.TextFieldItem", b =>
                 {
-                    b.Navigation("Elementi");
+                    b.HasOne("Shared.Element", "Element")
+                        .WithMany()
+                        .HasForeignKey("ElementId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Shared.OperacionaLista", "OperacionaLista")
+                        .WithMany("TextFieldItems")
+                        .HasForeignKey("OperacionaListaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Shared.Element", "PodElementi")
+                        .WithOne()
+                        .HasForeignKey("Shared.TextFieldItem", "PodElementId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Element");
+
+                    b.Navigation("OperacionaLista");
+
+                    b.Navigation("PodElementi");
+                });
+
+            modelBuilder.Entity("Shared.OperacionaLista", b =>
+                {
+                    b.Navigation("TextFieldItems");
                 });
 
             modelBuilder.Entity("Shared.Sablon", b =>

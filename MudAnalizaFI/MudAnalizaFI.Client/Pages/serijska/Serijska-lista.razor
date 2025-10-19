@@ -1,0 +1,284 @@
+﻿@page "/serijska-lista/novi"
+@using Shared
+@using System.Text.Json
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+
+<h3>Nova serijska lista</h3>
+
+<MudPaper Class="pa-4" Elevation="2">
+    <MudGrid>
+        <!-- Šifra paketa -->
+        <MudItem xs="12" sm="4">
+            <MudTextField T="int" Label="Šifra paketa"
+                          @bind-Value="novaLista.SifraPaketa"
+                          Variant="Variant.Outlined"
+                          FullWidth="true" />
+        </MudItem>
+
+        <!-- Brzina linije -->
+        <MudItem xs="12" sm="4">
+            <MudTextField T="double?" Label="Brzina linije (min)"
+                          @bind-Value="novaLista.BrzinaLinijeUMinuti"
+                          Variant="Variant.Outlined"
+                          FullWidth="true" />
+        </MudItem>
+
+        <!-- Dužina paketa (samo tekst) -->
+        <MudItem xs="12" sm="4" Class="d-flex align-center">
+            <MudText Typo="Typo.body1">Dužina paketa: @pakets?.Duzina</MudText>
+        </MudItem>
+    </MudGrid>
+
+    <!-- Dugme sačuvaj listu -->
+    <MudItem xs="12" Class="mt-4">
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   OnClick="DodajListu">
+            Sačuvaj listu
+        </MudButton>
+    </MudItem>
+
+    <!-- Dugme dodaj element -->
+    <MudItem xs="12" Class="mt-4">
+        <MudButton OnClick="@(() => AddTextField())"
+                   Variant="Variant.Outlined"
+                   Color="Color.Primary">
+            Dodaj element
+        </MudButton>
+
+        @foreach (var itemWithIndex in _textValues.Select((val, idx) => new { val, idx }))
+        {
+            var item = itemWithIndex.val;
+            var redni = itemWithIndex.idx + 1;
+
+            <MudItem xs="12" Class="my-4"></MudItem>
+
+            <MudGrid AlignItems="Center" Spacing="2">
+                <!-- Redni broj -->
+                <MudItem xs="1" Class="d-flex justify-center">
+                    <MudButton Variant="Variant.Filled" Size="Size.Small"
+                               Color="Color.Primary"
+                               OnClick="@(() => AddSubTextField(item))"
+                               Style="width:80%;">
+                        @redni.
+                    </MudButton>
+                </MudItem>
+
+                <!-- Glavni textfield -->
+                <MudItem xs="3">
+                    <MudTextField @bind-Value="item.Element.Sifra"
+                                  Label="Upisi element"
+                                  Variant="Variant.Outlined"
+                                  FullWidth="true" />
+                </MudItem>
+
+                <!-- Atributi -->
+                <MudItem xs="5" Class="d-flex justify-between">
+                    <MudTextField @bind-Value="item.Element.BrRadnika" Label="Broj radnika" Variant="Variant.Outlined" />
+                    <MudTextField @bind-Value="item.Element.Visina" Label="Visina" Variant="Variant.Outlined" />
+                    <MudTextField @bind-Value="item.Element.Duzina" Label="Dužina" Variant="Variant.Outlined" />
+                    <MudTextField @bind-Value="item.Element.Tezina" Label="Težina" Variant="Variant.Outlined" />
+                    <MudTextField @bind-Value="item.Element.Vreme" Label="Vreme" Variant="Variant.Outlined" />
+                </MudItem>
+
+                <!-- Dugme za brisanje -->
+                <MudItem xs="1" Class="d-flex justify-center">
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                   Color="Color.Error"
+                                   OnClick="@(() => DeleteTextField(item))" />
+                </MudItem>
+            </MudGrid>
+
+            <!-- Renderovanje pod-elementa -->
+            @if (item.PodElementi != null)
+            {
+                <MudGrid Spacing="2" AlignItems="Center">
+                    <MudItem xs="3">
+                        <MudTextField @bind-Value="item.PodElementi.Sifra"
+                                      Label="@($"Dodaj element ovom radniku")"
+                                      Variant="Variant.Outlined"
+                                      FullWidth="true"
+                                      OnKeyUp="@(e => HandleEnter(e, item))" />
+                    </MudItem>
+
+                    <MudItem xs="5" Class="d-flex justify-between">
+                        <MudTextField @bind-Value="item.PodElementi.BrRadnika" Label="Broj radnika" Variant="Variant.Outlined" />
+                        <MudTextField @bind-Value="item.PodElementi.Visina" Label="Visina" Variant="Variant.Outlined" />
+                        <MudTextField @bind-Value="item.PodElementi.Duzina" Label="Dužina" Variant="Variant.Outlined" />
+                        <MudTextField @bind-Value="item.PodElementi.Tezina" Label="Težina" Variant="Variant.Outlined" />
+                        <MudTextField @bind-Value="item.PodElementi.Vreme" Label="Vreme" Variant="Variant.Outlined" />
+                    </MudItem>
+
+                    <MudItem xs="1" Class="d-flex justify-center">
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                       Color="Color.Error"
+                                       OnClick="@(() => item.PodElementi = null)"
+                                       Class="ml-2" />
+                    </MudItem>
+                </MudGrid>
+            }
+        }
+    </MudItem>
+</MudPaper>
+
+@code {
+    private OperacionaLista novaLista = new();
+    private Paket? pakets;
+    private List<TextFieldItem> _textValues = new List<TextFieldItem>();
+    private List<TextFieldItem> elementiZaListu = new List<TextFieldItem>();
+    private int _nextId = 1;
+
+    private void AddTextField()
+    {
+        _textValues.Add(new TextFieldItem { Id = _nextId++, Element = new Element { Sifra = string.Empty } });
+    }
+
+    private void DeleteTextField(TextFieldItem item)
+    {
+        _textValues.Remove(item);
+    }
+
+    private void AddSubTextField(TextFieldItem parent)
+    {
+        parent.PodElementi ??= new Element { Sifra = string.Empty };
+    }
+
+    private async Task DodajListu()
+    {
+        try
+        {
+            pakets = await Http.GetFromJsonAsync<Paket>($"/api/Pakets/sifra/{novaLista.SifraPaketa}");
+            if (pakets == null)
+            {
+                Snackbar.Add($"Paket sa šifrom {novaLista.SifraPaketa} nije pronađen.", Severity.Error);
+                return;
+            }
+
+            elementiZaListu.Clear();
+
+            foreach (var item in _textValues)
+            {
+                Element? foundElement = null;
+
+                // 🔹 Glavni element
+                if (!string.IsNullOrWhiteSpace(item.Element?.Sifra))
+                {
+                    var response = await Http.GetAsync($"/api/Elements/elementi?sifre={item.Element.Sifra}");
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var json = await response.Content.ReadAsStringAsync();
+                        List<Element>? elementi = null;
+
+                        using var doc = JsonDocument.Parse(json);
+                        if (doc.RootElement.ValueKind == JsonValueKind.Object &&
+                            doc.RootElement.TryGetProperty("$values", out var valuesProp))
+                        {
+                            elementi = JsonSerializer.Deserialize<List<Element>>(valuesProp.GetRawText(),
+                                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        }
+                        else if (doc.RootElement.ValueKind == JsonValueKind.Array)
+                        {
+                            elementi = JsonSerializer.Deserialize<List<Element>>(json,
+                                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        }
+
+                        if (elementi != null && elementi.Count > 0)
+                        {
+                            foundElement = elementi[0];
+                            item.ElementId = foundElement.Id; // ✅ koristi ID umesto kreiranja novog Elementa
+                            item.Element = foundElement;     
+                        }
+                    }
+                }
+
+                // 🔹 Podelement (ako postoji)
+                if (item.PodElementi != null && !string.IsNullOrWhiteSpace(item.PodElementi.Sifra))
+                {
+                    var responsePod = await Http.GetAsync($"/api/Elements/elementi?sifre={item.PodElementi.Sifra}");
+                    if (responsePod.IsSuccessStatusCode)
+                    {
+                        var jsonPod = await responsePod.Content.ReadAsStringAsync();
+                        List<Element>? elementiPod = null;
+
+                        using var docPod = JsonDocument.Parse(jsonPod);
+                        if (docPod.RootElement.ValueKind == JsonValueKind.Object &&
+                            docPod.RootElement.TryGetProperty("$values", out var valuesProp))
+                        {
+                            elementiPod = JsonSerializer.Deserialize<List<Element>>(valuesProp.GetRawText(),
+                                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        }
+                        else if (docPod.RootElement.ValueKind == JsonValueKind.Array)
+                        {
+                            elementiPod = JsonSerializer.Deserialize<List<Element>>(jsonPod,
+                                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        }
+
+                        if (elementiPod != null && elementiPod.Count > 0)
+                        {
+                            var foundPod = elementiPod[0];
+                            item.PodElementId = foundPod.Id; // ✅ ovde se veže FK prema bazi
+                            item.PodElementi = foundPod;         // da EF ne pokušava da ga doda
+                        }
+                    }
+                }
+
+                elementiZaListu.Add(
+                new TextFieldItem
+                    {
+                        ElementId = item.ElementId,
+                        //Element = item.Element,
+                        OperacionaListaId = novaLista.Id,
+                        PodElementId = item.PodElementId
+                    }
+                );
+            }
+
+            // Očisti reference (sprečava cirkularne reference u JSON-u)
+            OcistiReference(novaLista);
+
+            var listaZaSlanje = new OperacionaLista
+            {
+                SifraPaketa = novaLista.SifraPaketa,
+                BrzinaLinijeUMinuti = novaLista.BrzinaLinijeUMinuti,
+                TextFieldItems = elementiZaListu
+            };
+
+            var postResponse = await Http.PostAsJsonAsync("/api/OperacionaLista", listaZaSlanje);
+
+            if (postResponse.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Lista uspešno sačuvana!", Severity.Success);
+            }
+            else
+            {
+                var error = await postResponse.Content.ReadAsStringAsync();
+                Snackbar.Add(error, Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+
+    private void HandleEnter(KeyboardEventArgs e, TextFieldItem pod)
+    {
+        if (e.Key == "Enter")
+        {
+            Console.WriteLine($"Uneta sifra: {pod.Element.Sifra}");
+        }
+    }
+
+    private void OcistiReference(OperacionaLista lista)
+    {
+        if (lista.TextFieldItems == null) return;
+        foreach (var item in lista.TextFieldItems)
+        {
+            item.OperacionaLista = null;
+            if (item.PodElementi != null)
+                item.PodElementi = null;
+        }
+    }
+}

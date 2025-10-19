@@ -1,5 +1,6 @@
 ﻿@page "/baza-sablona"
 @using Shared
+@using Shared.Functions
 @inject HttpClient Http
 @inject ISnackbar Snackbar
 @inject NavigationManager NavigationManager
@@ -91,7 +92,6 @@
                 <MudPaper Elevation="2" Class="p-4" @onclick="() => DetailNavigate(sablon.Id)">
                     <MudText Typo="Typo.h6" GutterBottom="true">@sablon.Naziv</MudText>
                     <MudText Typo="Typo.body2">@sablon.Sifra</MudText>
-                    <MudText Typo="Typo.body2">@sablon.Kod</MudText>
                 </MudPaper>
             </MudItem>
         }
@@ -116,8 +116,15 @@
 
     protected override async Task OnInitializedAsync()
     {
-        gustine = await Http.GetFromJsonAsync<List<Gustina>>("api/Gustinas");
-        await UcitajSablone();
+        try
+        {
+            gustine = await Http.GetFromJsonAsync<List<Gustina>>("api/Gustinas");
+            await UcitajSablone();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Greška pri učitavanju podataka: {ex.Message}", Severity.Error);
+		}
     }
 
     private async Task UcitajSablone()
@@ -137,14 +144,23 @@
         noviSablon.Kod = kodoviInput
         .Split(new[] { ',', '\n', '\r', ' ' }, StringSplitOptions.RemoveEmptyEntries)
         .Select(k => k.Trim())
-        .ToList(); 
-        noviSablon.Vreme = Shared.Functions.IzracunajVremeSablona.IzracunajUkupnuVrednost(noviSablon.Kod);
+        .ToList();
 
         if (string.IsNullOrWhiteSpace(noviSablon.Naziv) || string.IsNullOrWhiteSpace(noviSablon.Sifra))
         {
             Snackbar.Add("Molimo unesite naziv i opis šablona.", Severity.Warning);
             return;
         }
+
+        //proveri validnost koda
+        if (!ProveriKod.ProveriKodove(noviSablon.Kod))
+        {
+            Snackbar.Add("Kod sablona nije dobro definisan", Severity.Warning);
+            return;
+        }
+
+        noviSablon.Vreme = Shared.Functions.IzracunajVremeSablona.IzracunajUkupnuVrednost(noviSablon.Kod);
+
         try
         {
             var response = await Http.PostAsJsonAsync("api/Sablons", noviSablon);

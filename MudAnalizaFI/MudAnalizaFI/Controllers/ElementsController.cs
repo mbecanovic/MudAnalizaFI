@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MudAnalizaFI.Context;
 using Shared;
+using Shared.Functions;
 
 namespace MudAnalizaFI.Controllers
 {
@@ -94,11 +95,12 @@ namespace MudAnalizaFI.Controllers
             element.Povrsina = Math.Round(element.Duzina * element.Sirina, 2); //u metrima kvadratnim
 
             if (gustina.Opis == "stiropor" || gustina.Opis == "Stiropor" || gustina.Opis == "Lesonit" || element.Tezina < 3) element.BrRadnika = 0.5;
-            if(element.Tezina == 8) element.BrRadnika = 2;
+            if(element.Tezina >= 8) element.BrRadnika = 2;
             if (element.Tezina >= 3 & element.Tezina < 8) element.BrRadnika = 1;
-            if(element.Tezina > 8 || element.Tezina == 0) return BadRequest("Tezina elementa je veca od 8kg, molimo proverite parametre.");
+            if(element.Tezina == 0) return BadRequest("Molimo proverite parametre.");
             element.Naziv = gustina.Opis;
             element.Datum = DateTime.Now;
+            element.Kod = ProveriElemente.DodeliKod(element); //vraca nam Element.Kod koji predlaze koji kod treba dodeliti elementu
             _context.Elementi.Add(element);
             await _context.SaveChangesAsync();
 
@@ -136,6 +138,27 @@ namespace MudAnalizaFI.Controllers
 
             return Ok(elementi);
         }
+
+        [HttpGet("elementi")]
+        public async Task<IActionResult> GetElementi([FromQuery] string sifre)
+        {
+            if (string.IsNullOrWhiteSpace(sifre))
+                return BadRequest("Morate uneti bar jednu šifru.");
+
+            var listaSifara = sifre
+                .Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries)
+                .ToList();
+
+            var elementi = await _context.Elementi
+                .Where(e => listaSifara.Contains(e.Sifra))
+                .ToListAsync();
+
+            if (!elementi.Any())
+                return NotFound("Nema elemenata za unete šifre.");
+
+            return Ok(elementi);
+        }
+
 
 
         private bool ElementExists(int id)

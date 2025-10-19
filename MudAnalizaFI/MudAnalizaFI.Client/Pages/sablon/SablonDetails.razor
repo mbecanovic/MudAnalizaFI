@@ -1,6 +1,7 @@
 ﻿@page "/sablon/{id:int}"
 @inject HttpClient Http
 @inject ISnackbar Snackbar
+@using Shared.Functions
 
 <h1 class="mb-4">Detalji šablona</h1>
 @if (sablon == null)
@@ -77,6 +78,17 @@ else
                 Snackbar.Add("Unesi bar jednu šifru.", Severity.Warning);
                 return;
             }
+
+            //FJA za ucitavanje unetih elementara
+            var ucitaj = new UcitajElemente(Http);
+            var pronadjeniElementi = await ucitaj.UcitajElementeAsync(sifre, sablon.Kod);
+            //fja za proveravanje ucitanih elemenata
+            if (!ProveriElemente.ProveriElement(pronadjeniElementi, new List<Shared.Sablon> { sablon }))
+            {
+                Snackbar.Add("Neki od elementa nije validan. Kod ne odgovara elementu", Severity.Warning);
+                return;
+			}
+
 
             var response = await Http.PutAsJsonAsync($"api/Sablons/{id}/dodaj-po-sifri", sifre);
             if (response.IsSuccessStatusCode)

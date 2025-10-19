@@ -25,6 +25,8 @@
 
         public int? SablonId { get; set; }
         public virtual Sablon? Sablon { get; set; }
+        public string? Kod { get; set; }
+        public double? Vreme { get; set; }
     }
 
 }
