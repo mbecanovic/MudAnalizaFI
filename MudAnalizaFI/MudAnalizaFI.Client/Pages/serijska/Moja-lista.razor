@@ -1,0 +1,115 @@
+﻿@page "/serijska-lista/moje-liste"
+@using Shared
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+
+    <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-4">
+        Moje liste
+    </MudText>
+
+    <!-- 🔍 Search bar -->
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="2" Class="mb-6">
+        <MudTextField @bind-Value="searchTerm"
+                      Placeholder="Pretraži po šifri paketa..."
+                      Adornment="Adornment.Start"
+                      AdornmentIcon="@Icons.Material.Filled.Search"
+                      AdornmentColor="Color.Primary"
+                      Immediate="true"
+                      OnKeyUp="@((_) => SearchLists())"
+                      Class="w-50" />
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SearchLists">
+            <MudIcon Icon="@Icons.Material.Filled.Search" />
+            <span class="ms-2">Pretraži</span>
+        </MudButton>
+    </MudStack>
+
+    <!-- 📄 Loading / Empty / Grid -->
+    @if (filteredListe is null)
+    {
+        <MudText Align="Align.Center" Color="Color.Secondary">Učitavanje...</MudText>
+    }
+    else if (!filteredListe.Any())
+    {
+        <MudText Align="Align.Center" Color="Color.Secondary">Nema rezultata za prikaz.</MudText>
+    }
+    else
+    {
+        <MudGrid>
+            @foreach (var lista in filteredListe)
+            {
+                <MudItem xs="12" sm="6" md="3">
+                    <MudPaper Elevation="3" Class="p-4 rounded-lg hover-card">
+                        <MudText Typo="Typo.h6" Align="Align.Center" Class="fw-bold">
+                            Šifra: @lista.SifraPaketa
+                        </MudText>
+                        <MudText Typo="Typo.body2" Align="Align.Center" Color="Color.Secondary">
+                            Dužina: @lista.DuzinaPaketa m
+                        </MudText>
+                        <MudText Typo="Typo.caption" Align="Align.Center" Color="Color.Secondary">
+                            Kreirano: @lista.DatumKreiranja?.ToLocalTime().ToString("dd.MM.yyyy HH:mm")
+                        </MudText>
+
+                        <!-- Dugmad -->
+                        <MudStack Row="true" Justify="Justify.Center" Spacing="2" Class="mt-3">
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                                       OnClick="() => OpenDetalji(lista.Id)">
+                                Detalji
+                            </MudButton>
+
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                                       OnClick="@(() => OpenIzmeni(lista.Id))">
+                                Izmeni
+                            </MudButton>
+                        </MudStack>
+                    </MudPaper>
+                </MudItem>
+            }
+        </MudGrid>
+
+
+    }
+</MudContainer>
+
+@code {
+    private List<OperacionaLista>? sveListe;
+    private List<OperacionaLista>? filteredListe;
+    private string searchTerm = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            sveListe = await Http.GetFromJsonAsync<List<OperacionaLista>>("api/OperacionaLista");
+            filteredListe = sveListe;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Greška prilikom učitavanja: {ex.Message}");
+        }
+    }
+
+    private void SearchLists()
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            filteredListe = sveListe;
+        }
+        else
+        {
+            filteredListe = sveListe?
+                .Where(l => l.SifraPaketa.ToString().Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+    }
+
+    private void OpenDetalji(int id)
+    {
+        Navigation.NavigateTo($"/serijska-lista/detalji/{id}");
+    }
+    private void OpenIzmeni(int id)
+    {
+        Navigation.NavigateTo($"/serijska-lista/novi/{id}");
+    }
+}

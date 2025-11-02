@@ -1,4 +1,4 @@
-﻿@page "/serijska-lista/novi"
+﻿@page "/serijska-lista/novi/{ListaId:int?}"
 @using Shared
 @using System.Text.Json
 @inject HttpClient Http
@@ -93,10 +93,10 @@
             <!-- Renderovanje pod-elementa -->
             @if (item.PodElementi != null)
             {
-                <MudGrid Spacing="2" AlignItems="Center">
+                <MudGrid Spacing="2" AlignItems="Center" Class="ml-4">
                     <MudItem xs="3">
                         <MudTextField @bind-Value="item.PodElementi.Sifra"
-                                      Label="@($"Dodaj element ovom radniku")"
+                                      Label="Dodaj element ovom radniku"
                                       Variant="Variant.Outlined"
                                       FullWidth="true"
                                       OnKeyUp="@(e => HandleEnter(e, item))" />
@@ -129,6 +129,47 @@
     private List<TextFieldItem> elementiZaListu = new List<TextFieldItem>();
     private int _nextId = 1;
 
+    [Parameter]
+    public int ListaId { get; set; }
+    private OperacionaLista? lista;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (ListaId != 0)
+        {
+            lista = await Http.GetFromJsonAsync<OperacionaLista>($"api/OperacionaLista/{ListaId}");
+            if (lista != null)
+            {
+                novaLista = new OperacionaLista
+                {
+                    Id = lista.Id,
+                    SifraPaketa = lista.SifraPaketa,
+                    BrzinaLinijeUMinuti = lista.BrzinaLinijeUMinuti
+                };
+
+                pakets = await Http.GetFromJsonAsync<Paket>($"/api/Pakets/sifra/{lista.SifraPaketa}");
+
+                _textValues.Clear();
+                if (lista.TextFieldItems != null)
+                {
+                    foreach (var item in lista.TextFieldItems)
+                    {
+                        _textValues.Add(new TextFieldItem
+                        {
+                            Id = item.Id,
+                            ElementId = item.ElementId,
+                            Element = item.Element ?? new Element { Sifra = string.Empty },
+                            PodElementId = item.PodElementId,
+                            PodElementi = item.PodElementi ?? null,
+                            OperacionaListaId = item.OperacionaListaId,
+                            Vreme = item.Vreme
+                        });
+                    }
+                }
+            }
+        }
+    }
+
     private void AddTextField()
     {
         _textValues.Add(new TextFieldItem { Id = _nextId++, Element = new Element { Sifra = string.Empty } });
@@ -159,83 +200,45 @@
 
             foreach (var item in _textValues)
             {
-                Element? foundElement = null;
-
-                // 🔹 Glavni element
-                if (!string.IsNullOrWhiteSpace(item.Element?.Sifra))
+                // Glavni element
+                if (item.Element != null && !string.IsNullOrWhiteSpace(item.Element.Sifra))
                 {
                     var response = await Http.GetAsync($"/api/Elements/elementi?sifre={item.Element.Sifra}");
                     if (response.IsSuccessStatusCode)
                     {
                         var json = await response.Content.ReadAsStringAsync();
-                        List<Element>? elementi = null;
-
-                        using var doc = JsonDocument.Parse(json);
-                        if (doc.RootElement.ValueKind == JsonValueKind.Object &&
-                            doc.RootElement.TryGetProperty("$values", out var valuesProp))
-                        {
-                            elementi = JsonSerializer.Deserialize<List<Element>>(valuesProp.GetRawText(),
-                                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                        }
-                        else if (doc.RootElement.ValueKind == JsonValueKind.Array)
-                        {
-                            elementi = JsonSerializer.Deserialize<List<Element>>(json,
-                                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                        }
-
+                        List<Element>? elementi = JsonSerializer.Deserialize<List<Element>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                         if (elementi != null && elementi.Count > 0)
                         {
-                            foundElement = elementi[0];
-                            item.ElementId = foundElement.Id; // ✅ koristi ID umesto kreiranja novog Elementa
-                            item.Element = foundElement;     
+                            item.ElementId = elementi[0].Id;
+                            item.Element = elementi[0];
                         }
                     }
                 }
 
-                // 🔹 Podelement (ako postoji)
+                // Pod-element
                 if (item.PodElementi != null && !string.IsNullOrWhiteSpace(item.PodElementi.Sifra))
                 {
                     var responsePod = await Http.GetAsync($"/api/Elements/elementi?sifre={item.PodElementi.Sifra}");
                     if (responsePod.IsSuccessStatusCode)
                     {
                         var jsonPod = await responsePod.Content.ReadAsStringAsync();
-                        List<Element>? elementiPod = null;
-
-                        using var docPod = JsonDocument.Parse(jsonPod);
-                        if (docPod.RootElement.ValueKind == JsonValueKind.Object &&
-                            docPod.RootElement.TryGetProperty("$values", out var valuesProp))
-                        {
-                            elementiPod = JsonSerializer.Deserialize<List<Element>>(valuesProp.GetRawText(),
-                                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                        }
-                        else if (docPod.RootElement.ValueKind == JsonValueKind.Array)
-                        {
-                            elementiPod = JsonSerializer.Deserialize<List<Element>>(jsonPod,
-                                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                        }
-
+                        List<Element>? elementiPod = JsonSerializer.Deserialize<List<Element>>(jsonPod, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                         if (elementiPod != null && elementiPod.Count > 0)
                         {
-                            var foundPod = elementiPod[0];
-                            item.PodElementId = foundPod.Id; // ✅ ovde se veže FK prema bazi
-                            item.PodElementi = foundPod;         // da EF ne pokušava da ga doda
+                            item.PodElementId = elementiPod[0].Id;
+                            item.PodElementi = elementiPod[0];
                         }
                     }
                 }
 
-                elementiZaListu.Add(
-                new TextFieldItem
-                    {
-                        ElementId = item.ElementId,
-                        //Element = item.Element,
-                        OperacionaListaId = novaLista.Id,
-                        PodElementId = item.PodElementId
-                    }
-                );
+                elementiZaListu.Add(new TextFieldItem
+                {
+                    ElementId = item.ElementId,
+                    PodElementId = item.PodElementId,
+                    OperacionaListaId = novaLista.Id
+                });
             }
-
-            // Očisti reference (sprečava cirkularne reference u JSON-u)
-            OcistiReference(novaLista);
 
             var listaZaSlanje = new OperacionaLista
             {
@@ -245,7 +248,6 @@
                 TextFieldItems = elementiZaListu
             };
 
-            
             var postResponse = await Http.PostAsJsonAsync("/api/OperacionaLista", listaZaSlanje);
 
             if (postResponse.IsSuccessStatusCode)
@@ -264,23 +266,11 @@
         }
     }
 
-
     private void HandleEnter(KeyboardEventArgs e, TextFieldItem pod)
     {
         if (e.Key == "Enter")
         {
             Console.WriteLine($"Uneta sifra: {pod.Element.Sifra}");
-        }
-    }
-
-    private void OcistiReference(OperacionaLista lista)
-    {
-        if (lista.TextFieldItems == null) return;
-        foreach (var item in lista.TextFieldItems)
-        {
-            item.OperacionaLista = null;
-            if (item.PodElementi != null)
-                item.PodElementi = null;
         }
     }
 }
